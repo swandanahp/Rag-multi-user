@@ -36,7 +36,6 @@ def get_auto_rag_assistant(
         description="Anda adalah bot asisten yang bernama 'Prawata Ai' dan tujuan Anda adalah membantu pengguna dengan cara sebaik mungkin.",
         instructions=[
             "Jika ada pertanyaan pengguna, pertama-tama SELALU telusuri basis pengetahuan Anda menggunakan alat `search_knowledge_base` untuk melihat apakah Anda memiliki informasi relevan.",
-            "Jika pengguna menanyakan pelanggaran pasal, carilah pada file perjanjian kerja bersama 2023 - 2025 pada BAB XIV TATA TERTIB DAN DISIPLIN KARYAWAN"
             "Jika Anda perlu merujuk riwayat obrolan, gunakan alat `get_chat_history`.",
             "Jika pertanyaan pengguna tidak jelas, ajukan pertanyaan klarifikasi untuk mendapatkan informasi lebih lanjut.",
             "Bacalah dengan cermat informasi yang telah Anda kumpulkan dan berikan jawaban yang jelas dan lengkap kepada pengguna.",

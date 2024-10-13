@@ -46,8 +46,10 @@ def init_db():
         id SERIAL PRIMARY KEY,
         user_id INT NOT NULL,
         run_id TEXT NOT NULL,
+        messages TEXT,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (user_id) REFERENCES users(id)
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        UNIQUE (user_id, run_id)
     );
     """)
 

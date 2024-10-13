@@ -5,7 +5,10 @@ from db_config import get_connection
 
 
 def show_user_page():
-    st.header("Prawata Ai")
+    st.header("test")
+
+def cek2():
+    st.header("Prawata Ai2")
     st.subheader("Pegadaian Risk Assessment With Artificial Technology for Auditor")
     auto_rag_assistant: Assistant = st.session_state["auto_rag_assistant"]
 

@@ -10,7 +10,7 @@ def login(username, password):
     conn = get_connection()
     cursor = conn.cursor()
     query = sql.SQL("""
-        SELECT username, password_hash, role
+        SELECT id, username, password_hash, role
         FROM users
         WHERE username = %s
     """)
@@ -19,12 +19,12 @@ def login(username, password):
     cursor.close()
     conn.close()
 
-    if user and bcrypt.checkpw(password.encode(), user[1].encode()):
-        st.session_state['username'] = user[0]
-        st.session_state['role'] = user[2]
+    if user and bcrypt.checkpw(password.encode(), user[2].encode()):
+        st.session_state['username'] = user[1]
+        st.session_state['role'] = user[3]
         st.session_state['logged_in'] = True
-        return True
-    return False
+        return user[0]  # Return user_id
+    return None
 
 # Function to handle logout
 def logout():

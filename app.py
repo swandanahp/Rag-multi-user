@@ -5,9 +5,11 @@ from phi.document import Document
 from phi.document.reader.pdf import PDFReader
 from phi.document.reader.website import WebsiteReader
 from phi.utils.log import logger
+import json
 
 from assistant import get_auto_rag_assistant  # type: ignore
 from user_auth import login, logout, is_authenticated, is_admin
+from db_config import get_connection
 
 nest_asyncio.apply()
 st.set_page_config(
@@ -26,6 +28,29 @@ def restart_assistant():
         st.session_state["file_uploader_key"] += 1
     st.rerun()
 
+def save_chat_to_db(user_id, run_id, messages):
+    conn = get_connection()
+    cursor = conn.cursor()
+    messages_json = json.dumps(messages)  # Convert messages to JSON string
+    cursor.execute(
+        "INSERT INTO user_chat_sessions (user_id, run_id, messages) VALUES (%s, %s, %s) ON CONFLICT (user_id, run_id) DO UPDATE SET messages = %s",
+        (user_id, run_id, messages_json, messages_json)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+def load_chat_from_db(user_id, run_id):
+    conn = get_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        "SELECT messages FROM user_chat_sessions WHERE user_id = %s AND run_id = %s",
+        (user_id, run_id)
+    )
+    result = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    return json.loads(result[0]) if result else None  # Convert JSON string back to list
 
 def main() -> None:
     if not is_authenticated():
@@ -34,7 +59,9 @@ def main() -> None:
         username = st.sidebar.text_input("Username")
         password = st.sidebar.text_input("Password", type="password")
         if st.sidebar.button("Login"):
-            if login(username, password):
+            user_id = login(username, password)
+            if user_id:
+                st.session_state["user_id"] = user_id
                 st.sidebar.success("Login successful")
                 st.experimental_rerun()
             else:
@@ -55,10 +82,9 @@ def main() -> None:
         else:
             show_user_page()
 
-
 def show_admin_page():
-    st.header("Admin Page")
-    st.subheader("Manage Documents and AI Model")
+    st.header("Halaman Admin")
+    st.subheader("Manage Document dan AI Model")
     llm_model = st.sidebar.selectbox("Pilih model", options=["gpt-4-turbo", "gpt-3.5-turbo"])
     if "llm_model" not in st.session_state:
         st.session_state["llm_model"] = llm_model
@@ -80,9 +106,11 @@ def show_admin_page():
         st.warning("Could not create assistant, is the database running?")
         return
 
-    assistant_chat_history = auto_rag_assistant.memory.get_chat_history()
-    if len(assistant_chat_history) > 0:
-        logger.debug("Loading chat history")
+    user_id = st.session_state["user_id"]
+    run_id = st.session_state["auto_rag_assistant_run_id"]
+    assistant_chat_history = load_chat_from_db(user_id, run_id)
+    if assistant_chat_history:
+        logger.debug("Loading chat history from database")
         st.session_state["messages"] = assistant_chat_history
     else:
         logger.debug("No chat history found")
@@ -90,6 +118,7 @@ def show_admin_page():
 
     if prompt := st.chat_input():
         st.session_state["messages"].append({"role": "user", "content": prompt})
+        save_chat_to_db(user_id, run_id, st.session_state["messages"])
 
     for message in st.session_state["messages"]:
         if message["role"] == "system":
@@ -107,6 +136,7 @@ def show_admin_page():
                 response += delta
                 resp_container.markdown(response)
             st.session_state["messages"].append({"role": "assistant", "content": response})
+            save_chat_to_db(user_id, run_id, st.session_state["messages"])
 
     if auto_rag_assistant.knowledge_base:
         if "url_scrape_key" not in st.session_state:
@@ -170,15 +200,19 @@ def show_admin_page():
         st.sidebar.info("Harap tambahkan dokumen lagi karena model penyematan telah berubah.")
         st.session_state["embeddings_model_updated"] = False
 
-
 def show_user_page():
-    st.header("User Page")
-    st.subheader("Chat with AI Assistant")
+    st.header("Prawata Ai234")
+    st.subheader("Pegadaian Risk Assessment With Artificial Technology for Auditor")
     auto_rag_assistant: Assistant = st.session_state["auto_rag_assistant"]
 
-    assistant_chat_history = auto_rag_assistant.memory.get_chat_history()
-    if len(assistant_chat_history) > 0:
-        logger.debug("Loading chat history")
+    if "auto_rag_assistant_run_id" not in st.session_state:
+        st.session_state["auto_rag_assistant_run_id"] = auto_rag_assistant.create_run()
+
+    user_id = st.session_state["user_id"]
+    run_id = st.session_state["auto_rag_assistant_run_id"]
+    assistant_chat_history = load_chat_from_db(user_id, run_id)
+    if assistant_chat_history:
+        logger.debug("Loading chat history from database")
         st.session_state["messages"] = assistant_chat_history
     else:
         logger.debug("No chat history found")
@@ -186,6 +220,7 @@ def show_user_page():
 
     if prompt := st.chat_input():
         st.session_state["messages"].append({"role": "user", "content": prompt})
+        save_chat_to_db(user_id, run_id, st.session_state["messages"])
 
     for message in st.session_state["messages"]:
         if message["role"] == "system":
@@ -203,7 +238,7 @@ def show_user_page():
                 response += delta
                 resp_container.markdown(response)
             st.session_state["messages"].append({"role": "assistant", "content": response})
-
+            save_chat_to_db(user_id, run_id, st.session_state["messages"])
 
 main()
 
