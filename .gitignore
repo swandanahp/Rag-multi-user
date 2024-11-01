@@ -1,2 +1,4 @@
-/requirements.in
-/requirements.txt
+.env
+__pycache__/
+.vscode/
+*.pyc
