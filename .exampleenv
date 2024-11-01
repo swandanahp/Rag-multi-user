@@ -4,9 +4,8 @@ DB_USER="postgres"
 DB_PASSWORD="postgres"
 DB_HOST="localhost"
 DB_PORT="5432"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/Testing"
 
 # OpenAI
 OPENAI_API_KEY="YOUR OPEN AI API KEY"
-
-# MODEL
 AI_MODEL="gpt-4"

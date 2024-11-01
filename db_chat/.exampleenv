@@ -1,0 +1,12 @@
+# DATABASE
+DB_NAME="Testing"
+DB_USER="postgres"
+DB_PASSWORD="postgres"
+DB_HOST="localhost"
+DB_PORT="5432"
+
+# OpenAI
+OPENAI_API_KEY="YOUR OPEN AI API KEY"
+
+# MODEL
+AI_MODEL="gpt-4"
